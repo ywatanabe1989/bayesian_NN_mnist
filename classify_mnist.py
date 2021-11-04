@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: "2021-11-05 02:53:50 (ywatanabe)"
+# Time-stamp: "2021-11-05 04:32:50 (ywatanabe)"
 
 import os
 
@@ -43,6 +43,7 @@ class BayesianLinear(PyroModule):
         return self.bias + input @ self.weight  # this line samples bias and weight
 
 
+"""
 class BayesianPerceptron(PyroModule):
     def __init__(self, in_size, hidden_size, out_size, *args, **kwargs):
         assert len(args) == 0
@@ -61,6 +62,32 @@ class BayesianPerceptron(PyroModule):
         x = self.dropout_layer(x)
         x = self.act_func(x)
         x = self.fc2(x)
+        return x
+"""
+
+
+class BNN(PyroModule):
+    def __init__(self, in_size, hidden_size, out_size, *args, **kwargs):
+        assert len(args) == 0
+        assert len(kwargs) == 0
+
+        super().__init__()
+
+        self.fc1 = BayesianLinear(in_size, hidden_size)
+        self.fc2 = BayesianLinear(hidden_size, hidden_size)
+        self.fc3 = BayesianLinear(hidden_size, out_size)
+
+        self.dropout_layer = nn.Dropout(0.5)
+        self.act_func = nn.Sigmoid()  # nn.ReLU()
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.dropout_layer(x)
+        x = self.act_func(x)
+        x = self.fc2(x)
+        x = self.dropout_layer(x)
+        x = self.act_func(x)
+        x = self.fc3(x)
         return x
 
 
@@ -106,7 +133,7 @@ if __name__ == "__main__":
     DEVICE = "cuda"
     BATCH_SIZE = 5120
     IN_SIZE = 28 * 28  # MNIST
-    HIDDEN_SIZE = 1000
+    HIDDEN_SIZE = 100
     OUT_SIZE = 10
     MAX_EPOCHS = 100
 
@@ -143,7 +170,8 @@ if __name__ == "__main__":
     ################################################################################
     pyro.clear_param_store()
 
-    model = Model(BayesianPerceptron, IN_SIZE, HIDDEN_SIZE, OUT_SIZE).cuda()
+    # model = Model(BayesianPerceptron, IN_SIZE, HIDDEN_SIZE, OUT_SIZE).cuda()
+    model = Model(BNN, IN_SIZE, HIDDEN_SIZE, OUT_SIZE).cuda()
     guide = AutoNormal(model).cuda()
     svi = SVI(model, guide, Adam({"lr": 1e-2}), Trace_ELBO())
 
@@ -207,13 +235,17 @@ if __name__ == "__main__":
     ################################################################################
     fig, axes = plt.subplots(2, 1, sharex=True)
     axes[0].plot(losses_tra, label="Training", color="blue")
-    axes[0].scatter(len(losses_tra) - 1, loss_tes, label="Test", color="red")
+    axes[0].scatter(
+        len(losses_tra) - 1, loss_tes, label=f"Test {loss_tes:0.3g}", color="red"
+    )
     axes[0].set_ylabel("Loss")
     axes[0].legend()
 
     axes[1].plot(accs_tra, label="Training", color="blue")
     axes[1].set_ylabel("Accuracy")
-    axes[1].scatter(len(accs_tra) - 1, acc_tes, label="Test", color="red")
+    axes[1].scatter(
+        len(accs_tra) - 1, acc_tes, label=f"Test {acc_tes:0.3g}", color="red"
+    )
     axes[1].set_ylim([0, 1])
     axes[1].legend()
 
