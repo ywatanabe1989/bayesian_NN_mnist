@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: "2021-11-08 05:50:17 (ywatanabe)"
+# Time-stamp: "2021-11-08 06:59:14 (ywatanabe)"
 
 import os
 
@@ -302,6 +302,8 @@ if __name__ == "__main__":
     )
     fig.tight_layout()
     # fig.show()
-    mngs.general.save(fig, f"./classify_mnist_learning_curve_n_train_{n_train}.png")
+    mngs.general.save(
+        fig, f"./figs/classify_mnist_learning_curve_n_train_{n_train}.png"
+    )
 
     ## EOF
